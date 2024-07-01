@@ -1,0 +1,61 @@
+# Xcode
+#
+build/
+DerivedData/
+.idea/
+*.xcworkspace
+*.xccheckout
+*.xcscmblueprint
+
+# Swift Package Manager
+#
+.build/
+.swiftpm/xcode/package.resolved
+
+# User-specific files
+#
+xcuserdata/
+*.moved-aside
+*.xcuserstate
+*.xcuserdatad/
+
+# Logs
+#
+*.log
+*.xcactivitylog
+
+# Dependency managers
+#
+# CocoaPods
+Pods/
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# SwiftPM Packages
+#
+Packages/
+Package.pins
+
+# Fastlane
+#
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Misc
+#
+*.DS_Store
+*.swp
+*.swm
+*.tmp
+*~.nib
+*~.plist
+
+# AppCode
+#
+.idea/
+
+# My
+config.json
