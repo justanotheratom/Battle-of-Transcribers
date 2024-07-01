@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		399728FF2C2A431600860EAA /* BattleOfTranscribers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */; };
 		399729032C2A431800860EAA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 399729022C2A431800860EAA /* Assets.xcassets */; };
-		399729062C2A431800860EAA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 399729052C2A431800860EAA /* Preview Assets.xcassets */; };
-		3997290D2C2A46FC00860EAA /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = 3997290C2C2A46FC00860EAA /* config.json */; };
 		3997290F2C2B132B00860EAA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3997290E2C2B132B00860EAA /* ContentView.swift */; };
 		399729112C2B137E00860EAA /* AudioTranscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399729102C2B137E00860EAA /* AudioTranscriptionViewModel.swift */; };
 		399729132C2F2A9900860EAA /* IncrementingCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399729122C2F2A9900860EAA /* IncrementingCounter.swift */; };
@@ -30,8 +28,6 @@
 		399728FB2C2A431600860EAA /* BattleOfTranscribers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BattleOfTranscribers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleOfTranscribers.swift; sourceTree = "<group>"; };
 		399729022C2A431800860EAA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		399729052C2A431800860EAA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		3997290C2C2A46FC00860EAA /* config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
 		3997290E2C2B132B00860EAA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		399729102C2B137E00860EAA /* AudioTranscriptionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTranscriptionViewModel.swift; sourceTree = "<group>"; };
 		399729122C2F2A9900860EAA /* IncrementingCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncrementingCounter.swift; sourceTree = "<group>"; };
@@ -83,18 +79,8 @@
 				399729252C334FD000860EAA /* Transcribers */,
 				399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */,
 				399729022C2A431800860EAA /* Assets.xcassets */,
-				399729042C2A431800860EAA /* Preview Content */,
-				3997290C2C2A46FC00860EAA /* config.json */,
 			);
 			path = BattleOfTranscribers;
-			sourceTree = "<group>";
-		};
-		399729042C2A431800860EAA /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				399729052C2A431800860EAA /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 		399729252C334FD000860EAA /* Transcribers */ = {
@@ -203,9 +189,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				399729062C2A431800860EAA /* Preview Assets.xcassets in Resources */,
 				399729032C2A431800860EAA /* Assets.xcassets in Resources */,
-				3997290D2C2A46FC00860EAA /* config.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
