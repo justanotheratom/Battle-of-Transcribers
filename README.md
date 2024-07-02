@@ -25,7 +25,7 @@ Some transcribers require an API key to function. To add an API key:
 To build and run the application on an iPhone, follow these steps:
 
 1. **Clone the Repository:**
-   git clone https://github.com/yourusername/BattleOfTranscribers.git
+   git clone https://github.com/justanotheratom/Battle-of-Transcribers.git
    cd BattleOfTranscribers
 
 2. **Open the Project in Xcode:**
