@@ -26,6 +26,7 @@ struct ContentView: View {
                         .padding()
                 }
             }
+            .padding()
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("Battle of Transcribers")
             .toolbar {
@@ -38,7 +39,6 @@ struct ContentView: View {
                 }
             }
         }
-        .padding()
         .sheet(isPresented: $showSettings) {
             SettingsView(viewModel: settingsViewModel)
         }
