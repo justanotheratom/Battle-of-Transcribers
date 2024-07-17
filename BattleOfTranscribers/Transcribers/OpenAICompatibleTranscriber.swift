@@ -1,48 +1,28 @@
-
 import Foundation
 import AVFoundation
 import Combine
 
 class OpenAICompatibleTranscriber: TranscriberBase {
 
-    private var audioFile: AVAudioFile!
-    private var audioFileURL: URL!
-
     private let writeQueue = DispatchQueue(label: "com.yourapp.audioFileWriteQueue")
     private let transcriptionQueue = DispatchQueue(label: "com.example.transcriptionQueue")
     private var isTranscribing = false
     private var isQueued = false
 
-    init(config: TranscriberConfig, audioFormat: AVAudioFormat) {
-        super.init(config: config)
-        createOrEmptyAudioFile(audioFormat)
-    }
+    private var audioBuffers: [AVAudioPCMBuffer] = []
+    private let audioFormat: AVAudioFormat
 
     private var _requestCount = 0
 
-    override func queueBuffer(buffer: AVAudioPCMBuffer) {
-        self.writeQueue.async {
-            try! self.audioFile.write(from: buffer)
-            self.queueTranscription()
-        }
+    init(config: TranscriberConfig, audioFormat: AVAudioFormat) {
+        self.audioFormat = audioFormat
+        super.init(config: config)
     }
 
-    private func createOrEmptyAudioFile(_ audioFormat: AVAudioFormat) {
-        do {
-            let documentPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            audioFileURL = documentPath.appendingPathComponent("\(config.name).recording.wav")
-
-            if FileManager.default.fileExists(atPath: audioFileURL.path) {
-                try FileManager.default.removeItem(at: audioFileURL)
-            }
-            
-            audioFile = try AVAudioFile(forWriting: audioFileURL, settings: audioFormat.settings)
-            
-            let emptyBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: 0)!
-            try audioFile?.write(from: emptyBuffer)
-            
-        } catch {
-            print("Failed to create or empty audio file: \(error.localizedDescription)")
+    override func queueBuffer(buffer: AVAudioPCMBuffer) {
+        self.writeQueue.async {
+            self.audioBuffers.append(buffer)
+            self.queueTranscription()
         }
     }
 
@@ -65,12 +45,6 @@ class OpenAICompatibleTranscriber: TranscriberBase {
     }
 
     private func transcribeAudio() {
-        guard let audioData = try? Data(contentsOf: audioFileURL) else { return }
-
-        _requestCount += 1
-        let requestNumberString = String(format: "%03d", _requestCount)
-//        print("\(timestampString()) : \(requestNumberString) : Audio data length: \(audioData.count)")
-
         var request = URLRequest(url: URL(string: config.apiUrl!)!)
         request.httpMethod = "POST"
         request.addValue("Bearer \(config.apiKey!)", forHTTPHeaderField: "Authorization")
@@ -80,26 +54,33 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         
         var body = Data()
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"recording.wav\"\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\r\n".data(using: .utf8)!)
         body.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
-        body.append(audioData)
+        
+        // Combine all audio buffers into a single WAV file
+        let combinedBuffer = combineAudioBuffers()
+        let wavData = createWavData(from: combinedBuffer)
+        body.append(wavData)
+        
         body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\r\n\r\n".data(using: .utf8)!)
         body.append("\(config.modelName!)\r\n".data(using: .utf8)!)
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n".data(using: .utf8)!)
         body.append("en\r\n".data(using: .utf8)!)
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
         request.httpBody = body
         
+        _requestCount += 1
+        let requestNumberString = String(format: "%03d", _requestCount)
+        
         let startTime = CFAbsoluteTimeGetCurrent()
-//        print("\(timestampString()) : \(requestNumberString) : Sending request")
         URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             guard let self = self else { return }
             let endTime = CFAbsoluteTimeGetCurrent()
             let duration = endTime - startTime
-//            print("\(self.timestampString()) : \(requestNumberString) : Request finished: \(String(format: "%.2f", duration)) seconds")
+            
             defer {
                 self.transcriptionQueue.sync {
                     if self.isQueued {
@@ -111,6 +92,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                     }
                 }
             }
+            
             if let error = error {
                 print("\(self.timestampString()) : \(requestNumberString) : Failed to send audio data: \(error.localizedDescription)")
                 return
@@ -124,7 +106,6 @@ class OpenAICompatibleTranscriber: TranscriberBase {
             if let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []),
                let jsonDict = jsonResponse as? [String: Any],
                let transcription = jsonDict["text"] as? String {
-//                print("\(self.timestampString()) : \(requestNumberString) : Received: \(transcription)")
                 DispatchQueue.main.async {
                     self.state.transcription = transcription.trimmingCharacters(in: .whitespaces)
                     self.state.requestCount = self._requestCount
@@ -141,5 +122,110 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                 }
             }
         }.resume()
+    }
+    
+    private func combineAudioBuffers() -> AVAudioPCMBuffer {
+        let totalFrames = audioBuffers.reduce(0) { $0 + $1.frameLength }
+        guard let combinedBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: AVAudioFrameCount(totalFrames)) else {
+            fatalError("Failed to create combined buffer")
+        }
+        audioBuffers.forEach { combinedBuffer.appendBuffer($0) }
+        return combinedBuffer
+    }
+    
+    private func convert(buffer: AVAudioPCMBuffer, to format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        guard let converter = AVAudioConverter(from: buffer.format, to: format) else { return nil }
+        guard let newBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(buffer.frameLength)) else { return nil }
+        
+        var error: NSError?
+        let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+            outStatus.pointee = .haveData
+            return buffer
+        }
+        
+        converter.convert(to: newBuffer, error: &error, withInputFrom: inputBlock)
+        return newBuffer
+    }
+    
+    private func createWavData(from buffer: AVAudioPCMBuffer) -> Data {
+        var data = Data()
+        
+        // WAV header
+        data.append("RIFF".data(using: .ascii)!)
+        data.append(Data(repeating: 0, count: 4)) // File size (to be filled later)
+        data.append("WAVE".data(using: .ascii)!)
+        
+        // Format chunk
+        data.append("fmt ".data(using: .ascii)!)
+        data.append(UInt32(16).littleEndian.data)
+        data.append(UInt16(1).littleEndian.data) // Audio format (1 is PCM)
+        data.append(UInt16(buffer.format.channelCount).littleEndian.data)
+        data.append(UInt32(buffer.format.sampleRate).littleEndian.data)
+        data.append(UInt32(buffer.format.sampleRate * 4).littleEndian.data) // Byte rate
+        data.append(UInt16(4).littleEndian.data) // Block align
+        data.append(UInt16(32).littleEndian.data) // Bits per sample
+        
+        // Data chunk
+        data.append("data".data(using: .ascii)!)
+        let dataSize = UInt32(buffer.frameLength * 4)
+        data.append(dataSize.littleEndian.data)
+        
+        // Audio data
+        if let floatChannelData = buffer.floatChannelData {
+            let floatData = floatChannelData[0] // Assuming mono audio
+            for i in 0..<Int(buffer.frameLength) {
+                let floatSample = floatData[i]
+                let intSample = Int32(floatSample * Float(Int32.max))
+                data.append(intSample.littleEndian.data)
+            }
+        }
+        
+        // Update file size
+        let fileSize = UInt32(data.count - 8)
+        data.replaceSubrange(4..<8, with: fileSize.littleEndian.data)
+        
+        return data
+    }
+}
+
+extension UInt32 {
+    var data: Data {
+        var int = self
+        return Data(bytes: &int, count: MemoryLayout<UInt32>.size)
+    }
+}
+
+extension UInt16 {
+    var data: Data {
+        var int = self
+        return Data(bytes: &int, count: MemoryLayout<UInt16>.size)
+    }
+}
+
+extension Int32 {
+    var data: Data {
+        var int = self
+        return Data(bytes: &int, count: MemoryLayout<Int32>.size)
+    }
+}
+
+extension AVAudioPCMBuffer {
+    func appendBuffer(_ buffer: AVAudioPCMBuffer) {
+        guard let floatChannelData = self.floatChannelData,
+              let otherFloatChannelData = buffer.floatChannelData else {
+            return
+        }
+        
+        let channelCount = Int(self.format.channelCount)
+        let frameLength = Int(self.frameLength)
+        let otherFrameLength = Int(buffer.frameLength)
+        
+        for channel in 0..<channelCount {
+            memcpy(floatChannelData[channel] + frameLength,
+                   otherFloatChannelData[channel],
+                   otherFrameLength * MemoryLayout<Float>.size)
+        }
+        
+        self.frameLength += AVAudioFrameCount(otherFrameLength)
     }
 }
