@@ -17,7 +17,7 @@ struct ContentView: View {
                 if audioViewModel.transcribers.isEmpty {
                     emptyStateView
                 } else {
-                    VStack(spacing: 10) {
+                    VStack(spacing: 20) {
                         ForEach(audioViewModel.transcribers, id: \.name) { transcriber in
                             TranscriberView(viewModel: transcriber)
                         }
@@ -151,6 +151,7 @@ struct TranscriberView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     Text(viewModel.transcription)
+                        .textSelection(.enabled)
                         .font(.callout)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
