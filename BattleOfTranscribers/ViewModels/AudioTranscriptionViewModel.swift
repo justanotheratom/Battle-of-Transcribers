@@ -66,7 +66,7 @@ class AudioTranscriptionViewModel: ObservableObject {
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
         let hardwareSampleRate = inputFormat.sampleRate
-        let bufferSize = AVAudioFrameCount(hardwareSampleRate * 0.4) // 400ms worth of data
+        let bufferSize = AVAudioFrameCount(hardwareSampleRate * 0.5) // 400ms worth of data
 
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, time in
             guard let self = self else { return }
@@ -74,7 +74,7 @@ class AudioTranscriptionViewModel: ObservableObject {
 //            let callbackNumber = self.callbackNumberCounter.next()
 
             let converter = AVAudioConverter(from: inputFormat, to: targetFormat)
-            guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: AVAudioFrameCount(targetSampleRate * 0.4)) else {
+            guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: AVAudioFrameCount(targetSampleRate * 0.5)) else {
                 print("Failed to create converted buffer")
                 return
             }
