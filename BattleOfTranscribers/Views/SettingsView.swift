@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct SettingsView: View {
@@ -8,13 +7,15 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("Select Transcribers (Max 3)")) {
+                Section(header: Text("SELECT TRANSCRIBERS (MAX 3)")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                ) {
                     ForEach(viewModel.transcribers) { transcriber in
                         TranscriberRow(viewModel: viewModel, transcriber: transcriber)
                     }
                 }
             }
-            .listStyle(InsetGroupedListStyle())
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("Settings")
             .navigationBarItems(trailing: Button("Done") {
@@ -30,59 +31,62 @@ struct TranscriberRow: View {
     @State private var apiKey: String = ""
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(transcriber.name.rawValue)
                     .font(.headline)
                 Spacer()
-                Image(systemName: transcriber.isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(
-                        transcriber.canBeSelected
-                        ?
-                            transcriber.isSelected
-                            ?
-                                .green
-                            :
-                            viewModel.selectedCount < 3 ? .gray : .gray.opacity(0.5)
-                        :
-                            .gray.opacity(0.5))
-                    .onTapGesture {
-                        if transcriber.canBeSelected {
-                            viewModel.toggleSelection(for: transcriber)
-                        }
-                    }
+                Toggle("", isOn: Binding(
+                    get: { transcriber.isSelected },
+                    set: { _ in viewModel.toggleSelection(for: transcriber) }
+                ))
+                .labelsHidden()
+                .disabled(!canToggle)
+                .opacity(canToggle ? 1 : 0.5)
             }
 
             if transcriber.requiresAPIKey {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("API Key")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
                     
                     HStack {
-                        TextField("Paste API Key", text: .constant(obfuscatedAPIKey))
+                        SecureField("Paste API Key", text: $apiKey)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .disabled(true)
+                            .onChange(of: apiKey) { _, newValue in
+                                viewModel.updateAPIKey(for: transcriber, newKey: newValue)
+                            }
                         
                         Button(action: {
                             pasteAPIKey()
                         }) {
-                            Image(systemName: "doc.on.doc")
+                            Image(systemName: "doc.on.clipboard")
+                                .foregroundColor(.blue)
                         }
                         .buttonStyle(BorderlessButtonStyle())
                     }
+                    
+                    if apiKey.isEmpty {
+                        Text("API key required to enable")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
                 }
-                .padding(.leading, 8)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
         .onAppear {
             apiKey = transcriber.apiKey ?? ""
         }
     }
     
-    private var obfuscatedAPIKey: String {
-        apiKey.isEmpty ? "" : String(repeating: "•", count: 10)
+    private var canToggle: Bool {
+        if transcriber.requiresAPIKey {
+            return !apiKey.isEmpty && (viewModel.selectedCount < 3 || transcriber.isSelected)
+        } else {
+            return viewModel.selectedCount < 3 || transcriber.isSelected
+        }
     }
     
     private func pasteAPIKey() {
