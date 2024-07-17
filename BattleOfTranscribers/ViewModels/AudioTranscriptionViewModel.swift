@@ -51,9 +51,11 @@ class AudioTranscriptionViewModel: ObservableObject {
 
     private func setupAudioSession() {
         do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.record, mode: .default, options: [])
-            try audioSession.setActive(true)
+            // Note: .playAndRecord is used here instead of .record because it
+            // was found through experimentation that with .record, .notifyOthersOnDeactivation
+            // was not having the intended effect.
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default, options: [.duckOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             print("Failed to setup audio session: \(error.localizedDescription)")
         }
@@ -134,6 +136,7 @@ class AudioTranscriptionViewModel: ObservableObject {
     
     func stopRecording() {
         audioEngine.stop()
+        try! AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         isRecording = false
         batchQueue.sync {
             if !batchedBuffers.isEmpty {
