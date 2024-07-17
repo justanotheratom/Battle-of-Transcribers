@@ -4,6 +4,8 @@ struct ContentView: View {
     @StateObject private var settingsViewModel = SettingsViewModel()
     @StateObject private var audioViewModel: AudioTranscriptionViewModel
     @State private var showSettings = false
+    @State private var recordingDuration: TimeInterval = 0
+    @State private var timer: Timer?
 
     init() {
         let settingsVM = SettingsViewModel()
@@ -45,6 +47,25 @@ struct ContentView: View {
         .onChange(of: settingsViewModel.transcribers) { _, newValue in
             audioViewModel.updateTranscribers(with: newValue)
         }
+        .onChange(of: audioViewModel.isRecording) { _, isRecording in
+            if isRecording {
+                startTimer()
+            } else {
+                stopTimer()
+                recordingDuration = 0
+            }
+        }
+    }
+    
+    private func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            recordingDuration += 1
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
     }
     
     private var emptyStateView: some View {
@@ -84,27 +105,36 @@ struct ContentView: View {
         ]
         
         return LazyVGrid(columns: columns, content: {
-            Color.clear
             
-            Button(action: {
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
-                
-                if audioViewModel.isRecording {
-                    audioViewModel.stopRecording()
-                } else {
-                    audioViewModel.startRecording()
-                }
-            }) {
-                Image(systemName: audioViewModel.isRecording ? "stop.circle" : "record.circle")
-                    .foregroundStyle(audioViewModel.isRecording ? .red : .blue)
-                    .font(.system(size: 50))
-                    .scaleEffect(audioViewModel.isRecording ? 1.2 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: audioViewModel.isRecording)
-                    .opacity(audioViewModel.isRecording ? 1.0 : 0.7)
+            if audioViewModel.isRecording {
+                Text(String(format: "%.0f sec", recordingDuration))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                Color.clear
             }
-            .scaleEffect(audioViewModel.isRecording ? 1.1 : 1.0)
-            .animation(audioViewModel.isRecording ? Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: audioViewModel.isRecording)
+
+            VStack {
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    
+                    if audioViewModel.isRecording {
+                        audioViewModel.stopRecording()
+                    } else {
+                        audioViewModel.startRecording()
+                    }
+                }) {
+                    Image(systemName: audioViewModel.isRecording ? "stop.circle" : "record.circle")
+                        .foregroundStyle(audioViewModel.isRecording ? .red : .blue)
+                        .font(.system(size: 50))
+                        .scaleEffect(audioViewModel.isRecording ? 1.2 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: audioViewModel.isRecording)
+                        .opacity(audioViewModel.isRecording ? 1.0 : 0.7)
+                }
+                .scaleEffect(audioViewModel.isRecording ? 1.1 : 1.0)
+                .animation(audioViewModel.isRecording ? Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: audioViewModel.isRecording)
+            }
             
             HStack {
                 Spacer()
