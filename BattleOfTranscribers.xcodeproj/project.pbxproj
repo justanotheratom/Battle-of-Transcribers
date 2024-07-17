@@ -25,6 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		39168A412C481A0900B1662C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		399728FB2C2A431600860EAA /* BattleOfTranscribers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BattleOfTranscribers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleOfTranscribers.swift; sourceTree = "<group>"; };
 		399729022C2A431800860EAA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -73,6 +74,7 @@
 		399728FD2C2A431600860EAA /* BattleOfTranscribers */ = {
 			isa = PBXGroup;
 			children = (
+				39168A412C481A0900B1662C /* Info.plist */,
 				3997292E2C335A5000860EAA /* ViewModels */,
 				3997292D2C335A4000860EAA /* Views */,
 				3997292C2C33576C00860EAA /* Lib */,
@@ -346,6 +348,7 @@
 				DEVELOPMENT_TEAM = 58MYNHGN72;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BattleOfTranscribers/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For Live Transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Test iOS Built-In Transcription";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -376,6 +379,7 @@
 				DEVELOPMENT_TEAM = 58MYNHGN72;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BattleOfTranscribers/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For Live Transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Test iOS Built-In Transcription";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
