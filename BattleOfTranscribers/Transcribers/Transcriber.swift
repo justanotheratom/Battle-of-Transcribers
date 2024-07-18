@@ -44,7 +44,7 @@ protocol Transcriber {
     var requestCount: Int { get }
     var averageLatency: Double { get }
     func startRecording()
-    func queueBuffer(buffer: AVAudioPCMBuffer)
+    func queueBuffers(buffers: [AVAudioPCMBuffer])
 }
 
 struct TranscriberState {
@@ -78,7 +78,7 @@ class TranscriberBase: Transcriber, ObservableObject {
         state.requestCount > 0 ? state.totalLatency / Double(state.requestCount) : 0
     }
 
-    func queueBuffer(buffer: AVAudioPCMBuffer) {
+    func queueBuffers(buffers: [AVAudioPCMBuffer]) {
         fatalError("queueBuffer must be overridden by SubClass")
     }
     

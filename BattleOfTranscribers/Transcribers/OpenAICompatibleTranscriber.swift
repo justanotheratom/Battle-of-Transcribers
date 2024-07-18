@@ -19,9 +19,9 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         super.init(config: config)
     }
 
-    override func queueBuffer(buffer: AVAudioPCMBuffer) {
+    override func queueBuffers(buffers: [AVAudioPCMBuffer]) {
         self.writeQueue.async {
-            self.audioBuffers.append(buffer)
+            self.audioBuffers.append(contentsOf: buffers)
             self.queueTranscription()
         }
     }

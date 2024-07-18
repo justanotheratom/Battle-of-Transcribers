@@ -76,12 +76,10 @@ class AudioTranscriptionViewModel: ObservableObject {
                     self.batchedBuffers.append(convertedBuffer)
                     
                     if self.batchedBuffers.count >= self.batchSize {
-                        let buffersToMerge = self.batchedBuffers
+                        let buffers = self.batchedBuffers
                         self.batchedBuffers = []
-                        let combinedBuffer = AVAudioPCMBuffer.merge(buffers: buffersToMerge)!
-
                         for transcriber in self.transcribers {
-                            transcriber.queueBuffer(buffer: combinedBuffer)
+                            transcriber.queueBuffers(buffers: buffers)
                         }
                     }
                 }
@@ -156,12 +154,8 @@ class AudioTranscriptionViewModel: ObservableObject {
             if !batchedBuffers.isEmpty {
                 let remainingBuffers = self.batchedBuffers
                 self.batchedBuffers = []
-                let totalFrameCount = remainingBuffers.reduce(0) { $0 + $1.frameLength }
-                let combinedBuffer = AVAudioPCMBuffer(pcmFormat: self.targetFormat, frameCapacity: totalFrameCount)!
-                combinedBuffer.append(contentsOf: remainingBuffers)
-
                 for transcriber in self.transcribers {
-                    transcriber.queueBuffer(buffer: combinedBuffer)
+                    transcriber.queueBuffers(buffers: remainingBuffers)
                 }
             }
         }
@@ -213,5 +207,29 @@ extension AVAudioPCMBuffer {
         
         mergedBuffer.frameLength = totalFrameCount
         return mergedBuffer
+    }
+    
+    static func mergeSamples(_ buffers: [AVAudioPCMBuffer]) -> [[Int16]] {
+        var mergedSamples: [[Int16]] = []
+        
+        for buffer in buffers {
+            guard let int16ChannelData = buffer.int16ChannelData else {
+                print("Warning: Buffer does not contain int16 data. Skipping.")
+                continue
+            }
+            
+            let channelCount = Int(buffer.format.channelCount)
+            let frameLength = Int(buffer.frameLength)
+            
+            while mergedSamples.count < channelCount {
+                mergedSamples.append([])
+            }
+            
+            for channel in 0..<channelCount {
+                mergedSamples[channel].append(contentsOf: Array(UnsafeBufferPointer(start: int16ChannelData[channel], count: frameLength)))
+            }
+        }
+        
+        return mergedSamples
     }
 }

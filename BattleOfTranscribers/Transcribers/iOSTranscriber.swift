@@ -39,9 +39,11 @@ class iOSTranscriber: TranscriberBase {
         }
     }
 
-    override func queueBuffer(buffer: AVAudioPCMBuffer) {
+    override func queueBuffers(buffers: [AVAudioPCMBuffer]) {
         _ = self.requestCounter.next()
         startTime = CFAbsoluteTimeGetCurrent()
-        self.recognitionRequest?.append(buffer)
+        for buffer in buffers {
+            self.recognitionRequest?.append(buffer)
+        }
     }
 }

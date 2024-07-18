@@ -9,24 +9,10 @@ class DeepgramTranscriber: TranscriberBase, WebSocketDelegate {
     private var lastDuration: CFAbsoluteTime = 0
     private var socket: WebSocket?
 
-    override func queueBuffer(buffer: AVAudioPCMBuffer) {
+    override func queueBuffers(buffers: [AVAudioPCMBuffer]) {
         _ = self.requestCounter.next()
         startTime = CFAbsoluteTimeGetCurrent()
-
-        guard let channelData = buffer.floatChannelData else { return }
-        
-        let channelDataValue = channelData.pointee
-        let frameLength = Int(buffer.frameLength)
-        
-        var int16Data = [Int16](repeating: 0, count: frameLength)
-        
-        // Convert float32 to int16
-        for i in 0..<frameLength {
-            let floatValue = channelDataValue[i]
-            let int16Value = Int16(max(-32768, min(32767, round(floatValue * 32767))))
-            int16Data[i] = int16Value
-        }
-        
+        let int16Data = AVAudioPCMBuffer.mergeSamples(buffers)[0]
         let data = Data(bytes: int16Data, count: int16Data.count * MemoryLayout<Int16>.size)
         socket?.write(data: data)
     }
