@@ -66,7 +66,7 @@ class AudioTranscriptionViewModel: ObservableObject {
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
         let hardwareSampleRate = inputFormat.sampleRate
-        let bufferSize = AVAudioFrameCount(hardwareSampleRate * 0.5) // 400ms worth of data
+        let bufferSize = AVAudioFrameCount(hardwareSampleRate * 0.5) // 500ms worth of data
 
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, time in
             guard let self = self else { return }
