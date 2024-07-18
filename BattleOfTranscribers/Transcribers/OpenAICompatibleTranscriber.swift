@@ -68,6 +68,8 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         body.append("en\r\n".data(using: .utf8)!)
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
+//        print(String(format: "HTTP Request size: %.2f KB", Double(body.count) / 1024.0))
+
         request.httpBody = body
         
         _requestCount += 1
@@ -104,6 +106,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
             if let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []),
                let jsonDict = jsonResponse as? [String: Any],
                let transcription = jsonDict["text"] as? String {
+//                print("Transcript: \(transcription)")
                 DispatchQueue.main.async {
                     self.state.transcription = transcription.trimmingCharacters(in: .whitespaces)
                     self.state.requestCount = self._requestCount
@@ -139,24 +142,21 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         data.append(UInt16(1).littleEndian.data) // Audio format (1 is PCM)
         data.append(UInt16(audioFormat.channelCount).littleEndian.data)
         data.append(UInt32(audioFormat.sampleRate).littleEndian.data)
-        data.append(UInt32(audioFormat.sampleRate * 4).littleEndian.data) // Byte rate
-        data.append(UInt16(4).littleEndian.data) // Block align
-        data.append(UInt16(32).littleEndian.data) // Bits per sample
+        data.append(UInt32(audioFormat.sampleRate * 2).littleEndian.data) // Byte rate (2 bytes per sample)
+        data.append(UInt16(2).littleEndian.data) // Block align (2 bytes per sample)
+        data.append(UInt16(16).littleEndian.data) // Bits per sample
         
         // Data chunk
         data.append("data".data(using: .ascii)!)
-        let dataSize = UInt32(totalFrameCount * 4)
+        let dataSize = UInt32(totalFrameCount * 2) // 2 bytes per sample
         data.append(dataSize.littleEndian.data)
         
         // Audio data
         for buffer in buffers {
-            if let floatChannelData = buffer.floatChannelData {
-                let floatData = floatChannelData[0] // Assuming mono audio
-                for i in 0..<Int(buffer.frameLength) {
-                    let floatSample = floatData[i]
-                    let intSample = Int32(floatSample * Float(Int32.max))
-                    data.append(intSample.littleEndian.data)
-                }
+            let int16Data = buffer.int16ChannelData![0]
+            for i in 0..<Int(buffer.frameLength) {
+                let sample = int16Data[i]
+                data.append(sample.littleEndian.data)
             }
         }
         
@@ -186,5 +186,12 @@ extension Int32 {
     var data: Data {
         var int = self
         return Data(bytes: &int, count: MemoryLayout<Int32>.size)
+    }
+}
+
+extension Int16 {
+    var data: Data {
+        var int = self
+        return Data(bytes: &int, count: MemoryLayout<Int16>.size)
     }
 }

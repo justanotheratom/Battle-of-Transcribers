@@ -9,7 +9,7 @@ class AudioTranscriptionViewModel: ObservableObject {
     private var audioEngine: AVAudioEngine!
 
     private let targetSampleRate: Double = 16000
-    private let targetFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+    private let targetFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
                                              sampleRate: 16000,
                                              channels: 1,
                                              interleaved: false)!
@@ -70,43 +70,57 @@ class AudioTranscriptionViewModel: ObservableObject {
 
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, time in
             guard let self = self else { return }
-
-//            let callbackNumber = self.callbackNumberCounter.next()
-
-            let converter = AVAudioConverter(from: inputFormat, to: targetFormat)
-            guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: AVAudioFrameCount(targetSampleRate * 0.5)) else {
-                print("Failed to create converted buffer")
-                return
-            }
-            var error: NSError?
-            let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
-                outStatus.pointee = .haveData
-                return buffer
-            }
-            converter?.convert(to: convertedBuffer, error: &error, withInputFrom: inputBlock)
             
-            if let error = error {
-                print("Conversion error: \(error.localizedDescription)")
-                return
-            }
-            
-            self.batchQueue.async {
-                self.batchedBuffers.append(convertedBuffer)
-                
-                if self.batchedBuffers.count >= self.batchSize {
-                    let buffersToMerge = self.batchedBuffers
-                    self.batchedBuffers = []
-                    let totalFrameCount = buffersToMerge.reduce(0) { $0 + $1.frameLength }
-                    let combinedBuffer = AVAudioPCMBuffer(pcmFormat: self.targetFormat, frameCapacity: totalFrameCount)!
-                    combinedBuffer.append(contentsOf: buffersToMerge)
+            if let convertedBuffer = convert(buffer: buffer, from: inputFormat, to: targetFormat) {
+                self.batchQueue.async {
+                    self.batchedBuffers.append(convertedBuffer)
+                    
+                    if self.batchedBuffers.count >= self.batchSize {
+                        let buffersToMerge = self.batchedBuffers
+                        self.batchedBuffers = []
+                        let combinedBuffer = AVAudioPCMBuffer.merge(buffers: buffersToMerge)!
 
-                    for transcriber in self.transcribers {
-                        transcriber.queueBuffer(buffer: combinedBuffer)
+                        for transcriber in self.transcribers {
+                            transcriber.queueBuffer(buffer: combinedBuffer)
+                        }
                     }
                 }
+            } else {
+                print("Conversion failed")
             }
         }
         audioEngine.prepare()
+    }
+    
+    func convert(buffer inputBuffer: AVAudioPCMBuffer, from inputFormat: AVAudioFormat, to outputFormat: AVAudioFormat) -> AVAudioPCMBuffer? {
+        guard let converter = AVAudioConverter(from: inputFormat, to: outputFormat) else {
+            print("Failed to create audio converter")
+            return nil
+        }
+        
+        let inputFrameCount = AVAudioFrameCount(inputBuffer.frameLength)
+        let ratio = outputFormat.sampleRate / inputFormat.sampleRate
+        let outputFrameCapacity = AVAudioFrameCount(Double(inputFrameCount) * ratio)
+        
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: outputFrameCapacity) else {
+            print("Failed to create output buffer")
+            return nil
+        }
+        
+        var error: NSError?
+        let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+            outStatus.pointee = .haveData
+            return inputBuffer
+        }
+        
+        let status = converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
+        
+        if status == .error {
+            print("Conversion failed: \(error?.localizedDescription ?? "unknown error")")
+            return nil
+        }
+        
+        return outputBuffer
     }
 
     func startRecording() {
@@ -151,5 +165,53 @@ class AudioTranscriptionViewModel: ObservableObject {
                 }
             }
         }
+    }
+}
+
+extension AVAudioPCMBuffer {
+    static func merge(buffers: [AVAudioPCMBuffer]) -> AVAudioPCMBuffer? {
+        guard !buffers.isEmpty else { return nil }
+        
+        // Ensure all buffers have the same format
+        let format = buffers[0].format
+        guard buffers.allSatisfy({ $0.format == format }) else {
+            print("Error: All buffers must have the same audio format")
+            return nil
+        }
+        
+        // Calculate total frame count
+        let totalFrameCount = buffers.reduce(0) { $0 + $1.frameLength }
+        
+        // Create a new buffer with the total frame count
+        guard let mergedBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: totalFrameCount) else {
+            print("Error: Could not create merged buffer")
+            return nil
+        }
+        
+        // Append data from each buffer
+        var offset: AVAudioFrameCount = 0
+        for buffer in buffers {
+            if format.isInterleaved {
+                if let src = buffer.floatChannelData, let dst = mergedBuffer.floatChannelData {
+                    for channel in 0..<Int(format.channelCount) {
+                        memcpy(dst[channel] + Int(offset),
+                               src[channel],
+                               Int(buffer.frameLength) * MemoryLayout<Float>.size)
+                    }
+                }
+            } else {
+                if let src = buffer.int16ChannelData, let dst = mergedBuffer.int16ChannelData {
+                    for channel in 0..<Int(format.channelCount) {
+                        memcpy(dst[channel] + Int(offset),
+                               src[channel],
+                               Int(buffer.frameLength) * MemoryLayout<Int16>.size)
+                    }
+                }
+            }
+            offset += buffer.frameLength
+        }
+        
+        mergedBuffer.frameLength = totalFrameCount
+        return mergedBuffer
     }
 }
