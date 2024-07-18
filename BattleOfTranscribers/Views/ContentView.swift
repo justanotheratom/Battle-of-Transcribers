@@ -199,7 +199,7 @@ struct TranscriberView: View {
     }
     
     var bottomRow: some View {
-        HStack {
+        HStack(spacing: 20) {
             VStack(alignment: .leading) {
                 Spacer()
                 Text(viewModel.name).font(.caption).fontWeight(.semibold)
@@ -207,6 +207,7 @@ struct TranscriberView: View {
             .fixedSize(horizontal: false, vertical: true)
             Spacer()
             statItem(title: "Requests", value: "\(viewModel.requestCount)")
+            statItem(title: "Avg. Size", value: "\(viewModel.averageRequestSizeKB)")
             statItem(title: "Avg. Latency", value: "\(String(format: "%.2f", viewModel.averageLatency)) sec")
         }
     }

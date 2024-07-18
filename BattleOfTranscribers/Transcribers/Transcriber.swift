@@ -51,6 +51,7 @@ struct TranscriberState {
     var transcription: String = ""
     var requestCount: Int = 0
     var totalLatency: Double = 0.0
+    var totalRequestSizeBytes: Int = 0
 }
 
 class TranscriberBase: Transcriber, ObservableObject {
@@ -76,6 +77,10 @@ class TranscriberBase: Transcriber, ObservableObject {
     
     var averageLatency: Double {
         state.requestCount > 0 ? state.totalLatency / Double(state.requestCount) : 0
+    }
+    
+    var averageRequestSizeKB: Int {
+        state.requestCount > 0 ? state.totalRequestSizeBytes / 1024 / state.requestCount : 0
     }
 
     func queueBuffers(buffers: [AVAudioPCMBuffer]) {

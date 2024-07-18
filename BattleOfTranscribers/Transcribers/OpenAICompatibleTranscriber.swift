@@ -70,6 +70,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
 
 //        print(String(format: "HTTP Request size: %.2f KB", Double(body.count) / 1024.0))
 
+        let httpRequestSizeBytes = body.count
         request.httpBody = body
         
         _requestCount += 1
@@ -111,6 +112,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                     self.state.transcription = transcription.trimmingCharacters(in: .whitespaces)
                     self.state.requestCount = self._requestCount
                     self.state.totalLatency += duration
+                    self.state.totalRequestSizeBytes += httpRequestSizeBytes
                 }
             } else {
                 print("\(self.timestampString()) : \(requestNumberString) : Received something unexpected")
