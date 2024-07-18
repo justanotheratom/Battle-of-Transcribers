@@ -68,11 +68,13 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         body.append("en\r\n".data(using: .utf8)!)
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
-//        print(String(format: "HTTP Request size: %.2f KB", Double(body.count) / 1024.0))
-
-        let httpRequestSizeBytes = body.count
         request.httpBody = body
         
+        let secondsToTranscribe =
+            Int(audioBuffers.reduce(0) { $0 + $1.frameLength })
+            /
+            Int(audioFormat.sampleRate)
+
         _requestCount += 1
         let requestNumberString = String(format: "%03d", _requestCount)
         
@@ -112,7 +114,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                     self.state.transcription = transcription.trimmingCharacters(in: .whitespaces)
                     self.state.requestCount = self._requestCount
                     self.state.totalLatency += duration
-                    self.state.totalRequestSizeBytes += httpRequestSizeBytes
+                    self.state.totalSecondsTranscribed += secondsToTranscribe
                 }
             } else {
                 print("\(self.timestampString()) : \(requestNumberString) : Received something unexpected")
@@ -153,7 +155,6 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         let dataSize = UInt32(totalFrameCount * 2) // 2 bytes per sample
         data.append(dataSize.littleEndian.data)
         
-        // Audio data
         for buffer in buffers {
             let int16Data = buffer.int16ChannelData![0]
             for i in 0..<Int(buffer.frameLength) {
@@ -161,7 +162,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                 data.append(sample.littleEndian.data)
             }
         }
-        
+
         // Update file size
         let fileSize = UInt32(data.count - 8)
         data.replaceSubrange(4..<8, with: fileSize.littleEndian.data)
