@@ -14,7 +14,7 @@ class AudioTranscriptionViewModel: ObservableObject {
                                              channels: 1,
                                              interleaved: false)!
 
-    private let batchSize = 5
+    private let batchSize = 20
     private var batchedBuffers: [AVAudioPCMBuffer] = []
     private let batchQueue = DispatchQueue(label: "com.transcriber.batchQueue")
 
@@ -66,7 +66,7 @@ class AudioTranscriptionViewModel: ObservableObject {
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
         let hardwareSampleRate = inputFormat.sampleRate
-        let bufferSize = AVAudioFrameCount(hardwareSampleRate * 0.5) // 500ms worth of data
+        let bufferSize = AVAudioFrameCount(hardwareSampleRate * 0.1) // 100ms worth of data
 
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, time in
             guard let self = self else { return }
