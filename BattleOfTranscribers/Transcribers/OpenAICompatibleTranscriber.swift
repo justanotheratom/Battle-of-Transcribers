@@ -2,9 +2,13 @@ import Foundation
 import AVFoundation
 import Combine
 
+struct TranscriptFragment {
+    var fragment: String
+    var bufferCount: Int
+}
+
 class OpenAICompatibleTranscriber: TranscriberBase {
 
-    private let writeQueue = DispatchQueue(label: "com.yourapp.audioFileWriteQueue")
     private let transcriptionQueue = DispatchQueue(label: "com.example.transcriptionQueue")
     private var isTranscribing = false
     private var isQueued = false
@@ -13,6 +17,10 @@ class OpenAICompatibleTranscriber: TranscriberBase {
     private let audioFormat: AVAudioFormat
 
     private var _requestCount = 0
+    
+    private let maxTranscriptionWindow = 4
+    private var fragments: [TranscriptFragment] = []
+    private var prefix: String = ""
 
     init(config: TranscriberConfig, audioFormat: AVAudioFormat) {
         self.audioFormat = audioFormat
@@ -20,20 +28,14 @@ class OpenAICompatibleTranscriber: TranscriberBase {
     }
 
     override func queueBuffers(buffers: [AVAudioPCMBuffer]) {
-        self.writeQueue.async {
+        transcriptionQueue.async {
             self.audioBuffers.append(contentsOf: buffers)
-            self.queueTranscription()
-        }
-    }
-
-    private func queueTranscription() {
-        transcriptionQueue.sync {
-            if isTranscribing {
-                isQueued = true
+            if self.isTranscribing {
+                self.isQueued = true
             } else {
-                isQueued = false
-                isTranscribing = true
-                transcribeAudio()
+                self.isQueued = false
+                self.isTranscribing = true
+                self.transcribeAudio()
             }
         }
     }
@@ -67,6 +69,9 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         body.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n".data(using: .utf8)!)
         body.append("en\r\n".data(using: .utf8)!)
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"prompt\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(self.prefix)\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
         request.httpBody = body
         
@@ -74,6 +79,8 @@ class OpenAICompatibleTranscriber: TranscriberBase {
             Int(audioBuffers.reduce(0) { $0 + $1.frameLength })
             /
             Int(audioFormat.sampleRate)
+        
+        let buffersTranscribed = self.audioBuffers.count
 
         _requestCount += 1
         let requestNumberString = String(format: "%03d", _requestCount)
@@ -83,9 +90,13 @@ class OpenAICompatibleTranscriber: TranscriberBase {
             guard let self = self else { return }
             let endTime = CFAbsoluteTimeGetCurrent()
             let duration = endTime - startTime
+            var newTranscript: String? = nil
             
             defer {
                 self.transcriptionQueue.sync {
+                    if let newTranscript {
+                        self.trimBuffers(newTranscript: newTranscript, bufferCount: buffersTranscribed)
+                    }
                     if self.isQueued {
                         self.isQueued = false
                         self.isTranscribing = true
@@ -110,8 +121,14 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                let jsonDict = jsonResponse as? [String: Any],
                let transcription = jsonDict["text"] as? String {
 //                print("Transcript: \(transcription)")
+                newTranscript = sanitizeTranscript(transcription.trimmingCharacters(in: .whitespaces))
+                let prefix = self.prefix
                 DispatchQueue.main.async {
-                    self.state.transcription = transcription.trimmingCharacters(in: .whitespaces)
+                    self.state.transcription =
+                        self.appendTranscript(
+                            prefix: prefix,
+                            suffix: newTranscript!
+                        )
                     self.state.requestCount = self._requestCount
                     self.state.totalLatency += duration
                     self.state.totalSecondsTranscribed += secondsToTranscribe
@@ -129,6 +146,67 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         }.resume()
     }
     
+    private func trimBuffers(newTranscript: String, bufferCount: Int) {
+        fragments.append(TranscriptFragment(fragment: newTranscript, bufferCount: bufferCount))
+        if fragments.count == 1 {
+            return
+        }
+        if fragments.count == maxTranscriptionWindow {
+            let firstIsPrefixOfAll = fragments.dropFirst().allSatisfy { $0.fragment.hasPrefix(fragments[0].fragment) }
+            if firstIsPrefixOfAll {
+//                print("--------------------")
+//                fragments.indices.forEach {
+//                    print("\($0): \(fragments[$0].fragment)")
+//                }
+                let firstFragment = fragments[0]
+                fragments.removeFirst()
+                fragments.indices.forEach {
+                    fragments[$0].bufferCount -= firstFragment.bufferCount
+                    fragments[$0].fragment.removeFirst(firstFragment.fragment.count)
+                }
+                audioBuffers.removeFirst(firstFragment.bufferCount)
+//                print("Prefix Befor: \(prefix)")
+                prefix = appendTranscript(prefix: prefix, suffix: firstFragment.fragment)
+//                print("Prefix After: \(prefix)")
+            } else {
+                fragments.removeFirst()
+            }
+        }
+    }
+
+    private func sanitizeTranscript(_ transcript: String) -> String {
+        
+        let fillerPhrases = Set([
+            "Thank you.",
+            "You",
+            "you",
+            "Thanks for watching!",
+            "Thank you for watching!",
+            "Thank you for watching.",
+            ".",
+            ". ."
+        ])
+
+        if fillerPhrases.contains(transcript) {
+            return ""
+        }
+        
+        return transcript
+    }
+    
+    private func appendTranscript(prefix: String, suffix: String) -> String {
+
+        if suffix.isEmpty {
+            return prefix
+        }
+
+        if prefix.isEmpty {
+            return suffix
+        }
+
+        return prefix + " " + suffix
+    }
+
     private func createWavData(from buffers: [AVAudioPCMBuffer]) -> Data {
         var data = Data()
         
