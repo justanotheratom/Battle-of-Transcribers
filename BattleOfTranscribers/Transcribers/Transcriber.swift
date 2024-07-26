@@ -8,6 +8,7 @@ enum TranscriberName: String, Codable, CaseIterable {
     case OpenAI = "OPENAI"
     case Deepgram = "DEEPGRAM"
     case Groq = "GROQ"
+    case AssemblyAI = "ASSEMBLYAI"
 }
 
 struct TranscriberConfig: Identifiable, Codable, Equatable {

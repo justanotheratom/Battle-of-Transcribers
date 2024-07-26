@@ -43,14 +43,23 @@ class SettingsViewModel: ObservableObject {
                 apiUrl: "wss://api.deepgram.com/v1/listen",
                 modelName: "nova-2-general"
             ),
+            TranscriberConfig(
+                id: UUID(),
+                name: .AssemblyAI,
+                isSelected: false,
+                requiresAPIKey: true,
+                apiUrl: "api.assemblyai.com/v2/realtime",
+                modelName: "nova-2-general"
+            ),
         ]
 
-        self.transcribers = []
-        
+        self.transcribers = defaultTranscribers
         if let savedTranscribers = loadTranscribers() {
-            self.transcribers = savedTranscribers
-        } else {
-            self.transcribers = defaultTranscribers
+            for (i, e) in transcribers.enumerated() {
+                if let savedTranscriber = savedTranscribers.first(where: { $0.name == e.name }) {
+                    transcribers[i] = savedTranscriber
+                }
+            }
         }
     }
     

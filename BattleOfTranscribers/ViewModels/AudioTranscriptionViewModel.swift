@@ -42,6 +42,8 @@ class AudioTranscriptionViewModel: ObservableObject {
             return DeepgramTranscriber(config: config)
         case .Groq, .OpenAI:
             return OpenAICompatibleTranscriber(config: config, audioFormat: targetFormat)
+        case .AssemblyAI:
+            return AssemblyAITranscriber(config: config)
         }
     }
 

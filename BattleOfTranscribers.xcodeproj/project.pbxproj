@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		393E27432C54000400968404 /* AssemblyAITranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 393E27422C53FFFE00968404 /* AssemblyAITranscriber.swift */; };
 		399728FF2C2A431600860EAA /* BattleOfTranscribers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */; };
 		399729032C2A431800860EAA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 399729022C2A431800860EAA /* Assets.xcassets */; };
 		3997290F2C2B132B00860EAA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3997290E2C2B132B00860EAA /* ContentView.swift */; };
@@ -26,6 +27,7 @@
 
 /* Begin PBXFileReference section */
 		39168A412C481A0900B1662C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		393E27422C53FFFE00968404 /* AssemblyAITranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblyAITranscriber.swift; sourceTree = "<group>"; };
 		399728FB2C2A431600860EAA /* BattleOfTranscribers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BattleOfTranscribers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleOfTranscribers.swift; sourceTree = "<group>"; };
 		399729022C2A431800860EAA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 		399729252C334FD000860EAA /* Transcribers */ = {
 			isa = PBXGroup;
 			children = (
+				393E27422C53FFFE00968404 /* AssemblyAITranscriber.swift */,
 				399729262C334FF600860EAA /* Transcriber.swift */,
 				399729282C3350A800860EAA /* iOSTranscriber.swift */,
 				3997292A2C3350FA00860EAA /* DeepgramTranscriber.swift */,
@@ -209,6 +212,7 @@
 				399728FF2C2A431600860EAA /* BattleOfTranscribers.swift in Sources */,
 				3997292B2C3350FA00860EAA /* DeepgramTranscriber.swift in Sources */,
 				399729132C2F2A9900860EAA /* IncrementingCounter.swift in Sources */,
+				393E27432C54000400968404 /* AssemblyAITranscriber.swift in Sources */,
 				3997291A2C2F821F00860EAA /* OpenAICompatibleTranscriber.swift in Sources */,
 				399729242C33252900860EAA /* SettingsViewModel.swift in Sources */,
 				399729272C334FF600860EAA /* Transcriber.swift in Sources */,

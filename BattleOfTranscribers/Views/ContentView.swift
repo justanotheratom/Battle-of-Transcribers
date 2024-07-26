@@ -206,9 +206,9 @@ struct TranscriberView: View {
             }
             .fixedSize(horizontal: false, vertical: true)
             Spacer()
-            statItem(title: "Requests", value: "\(viewModel.requestCount)")
-            statItem(title: "Sec / Request", value: "\(String(format: "%.2f", viewModel.averageSecondsPerRequest))")
-            statItem(title: "Avg. Latency", value: "\(String(format: "%.2f", viewModel.averageLatency)) sec")
+            statItem(title: "Req", value: "\(viewModel.requestCount)")
+            statItem(title: "Sec/Req", value: "\(String(format: "%.2f", viewModel.averageSecondsPerRequest))")
+            statItem(title: "Latency (Avg)", value: "\(String(format: "%.2f", viewModel.averageLatency)) sec")
         }
     }
     
