@@ -15,10 +15,21 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
         _ = self.requestCounter.next()
         startTime = CFAbsoluteTimeGetCurrent()
         let int16Data = AVAudioPCMBuffer.mergeSamples(buffers)[0]
-        let data = Data(bytes: int16Data, count: int16Data.count * MemoryLayout<Int16>.size)
+        let audioData = Data(bytes: int16Data, count: int16Data.count * MemoryLayout<Int16>.size)
+        
         if isConnected {
-            socket?.write(data: data)
-            print("Sent audio data: \(data.count) bytes")
+            let base64Audio = audioData.base64EncodedString()
+            let message: [String: Any] = [
+                "audio_data": base64Audio,
+                "message_type": "AudioData"
+            ]
+            if let jsonData = try? JSONSerialization.data(withJSONObject: message),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                socket?.write(string: jsonString)
+                print("Sent audio data message of length: \(jsonString.count)")
+            } else {
+                print("Failed to create audio data message")
+            }
         } else {
             print("WebSocket not connected. Cannot send audio data.")
         }
@@ -103,17 +114,21 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
             return
         }
         
-        let urlString = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
-        guard var urlComponents = URLComponents(string: urlString) else {
+        let baseUrlString = "wss://api.assemblyai.com/v2/realtime/ws"
+        guard var urlComponents = URLComponents(string: baseUrlString) else {
             print("Invalid URL")
             return
         }
         
-        // Add the token as a query parameter
-        urlComponents.queryItems = (urlComponents.queryItems ?? []) + [URLQueryItem(name: "token", value: authToken)]
+        // Add the documented parameters to the URL
+        urlComponents.queryItems = [
+            URLQueryItem(name: "sample_rate", value: "16000"),
+            URLQueryItem(name: "token", value: authToken),
+            URLQueryItem(name: "encoding", value: "pcm_s16le")
+        ]
         
         guard let url = urlComponents.url else {
-            print("Failed to create URL with token")
+            print("Failed to create URL with parameters")
             return
         }
         
@@ -125,14 +140,13 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
         socket?.delegate = self
         socket?.connect()
     }
-    
+
     func didReceive(event: WebSocketEvent, client: WebSocketClient) {
         switch event {
         case .connected(let headers):
             print("WebSocket connected successfully")
             print("Connected headers: \(headers)")
             isConnected = true
-            sendConfigurationMessage()
         case .disconnected(let reason, let code):
             print("WebSocket disconnected with reason: \(reason), code: \(code)")
             isConnected = false
@@ -168,21 +182,7 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
             isConnected = false
         }
     }
-    
-    private func sendConfigurationMessage() {
-        let configMessage: [String: Any] = [
-            "sample_rate": 16000,
-            "language_code": "en-US", // Modify as needed
-            "word_boost": [],
-            "audio_encoding": "pcm_s16le" // Modify if your audio format is different
-        ]
-        if let jsonData = try? JSONSerialization.data(withJSONObject: configMessage),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            socket?.write(string: jsonString)
-            print("Sent configuration message: \(jsonString)")
-        }
-    }
-    
+
     private func processTranscription(jsonString: String) {
         guard let jsonData = jsonString.data(using: .utf8) else {
             print("Failed to convert JSON string to data")
