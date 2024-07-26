@@ -10,6 +10,7 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
     private var socket: WebSocket?
     private var authToken: String?
     private var isConnected = false
+    @MainActor private var transcriptPrefix = ""
 
     override func queueBuffers(buffers: [AVAudioPCMBuffer]) {
         _ = self.requestCounter.next()
@@ -151,7 +152,7 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
             print("WebSocket disconnected with reason: \(reason), code: \(code)")
             isConnected = false
         case .text(let text):
-            print("Received text: \(text)")
+//            print("Received text: \(text)")
             processTranscription(jsonString: text)
         case .binary(let data):
             print("Received binary data of length: \(data.count)")
@@ -191,17 +192,15 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
         
         do {
             if let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
-                print("Received JSON: \(json)")
-                
                 if let msgType = json["message_type"] as? String {
                     if msgType == "FinalTranscript",
-                       let transcript = json["text"] as? String {
-                        print("Received final transcript: \(transcript)")
-                        updateTranscription(transcript)
-                    } else if msgType == "PartialTranscript" {
-                        print("Received partial transcript")
+                        let transcript = json["text"] as? String {
+                        updateFinalTranscript(transcript)
+                    } else if msgType == "PartialTranscript",
+                        let partialTranscript = json["text"] as? String {
+                        updatePartialTranscript(partialTranscript)
                     } else {
-                        print("Received message of type: \(msgType)")
+                        print("Received message of unknown type: \(msgType)")
                     }
                 } else {
                     print("Message type not found in JSON")
@@ -212,7 +211,7 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
         }
     }
     
-    private func updateTranscription(_ transcript: String) {
+    private func updateFinalTranscript(_ transcript: String) {
         let endTime = CFAbsoluteTimeGetCurrent()
         let duration = endTime - startTime
 
@@ -225,11 +224,26 @@ class AssemblyAITranscriber: TranscriberBase, WebSocketDelegate {
                 self.state.totalLatency = self.state.totalLatency - self.lastDuration + duration
             }
             self.lastDuration = duration
-            if self.state.transcription != "" {
-                self.state.transcription += " "
-            }
-            self.state.transcription += transcript
-            print("Updated transcription: \(self.state.transcription)")
+
+            self.state.transcription =
+                self.transcriptPrefix.isEmpty ?
+                    transcript
+                    :
+                    self.transcriptPrefix + " " + transcript
+            
+            self.transcriptPrefix = self.state.transcription
+            
+            print("FinalTranscript: \(transcript)")
+        }
+    }
+    
+    private func updatePartialTranscript(_ partialTranscript: String) {
+        DispatchQueue.main.async {
+            self.state.transcription =
+                self.transcriptPrefix.isEmpty ?
+                    partialTranscript
+                    :
+                    self.transcriptPrefix + " " + partialTranscript
         }
     }
 }
