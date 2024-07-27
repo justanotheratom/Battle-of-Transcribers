@@ -49,10 +49,10 @@ struct ContentView: View {
         }
         .onChange(of: audioViewModel.isRecording) { _, isRecording in
             if isRecording {
+                recordingDuration = 0
                 startTimer()
             } else {
                 stopTimer()
-                recordingDuration = 0
             }
         }
     }
@@ -106,13 +106,9 @@ struct ContentView: View {
         
         return LazyVGrid(columns: columns, content: {
             
-            if audioViewModel.isRecording {
-                Text(String(format: "%.0f sec", recordingDuration))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else {
-                Color.clear
-            }
+            Text(String(format: "%.0f sec", recordingDuration))
+                .font(.caption)
+                .foregroundColor(.secondary)
 
             VStack {
                 Button(action: {
