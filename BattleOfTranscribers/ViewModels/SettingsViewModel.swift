@@ -17,23 +17,26 @@ class SettingsViewModel: ObservableObject {
                 isSelected: false,
                 requiresAPIKey: false,
                 apiUrl: nil,
-                modelName: nil
+                speechModelName: nil,
+                textModelName: nil
             ),
             TranscriberConfig(
                 id: UUID(),
                 name: .Groq,
                 isSelected: false,
                 requiresAPIKey: true,
-                apiUrl: "https://api.groq.com/openai/v1/audio/transcriptions",
-                modelName: "whisper-large-v3"
+                apiUrl: "api.groq.com/openai/v1",
+                speechModelName: "whisper-large-v3",
+                textModelName: "llama-3.1-8b-instant"
             ),
             TranscriberConfig(
                 id: UUID(),
                 name: .OpenAI,
                 isSelected: false,
                 requiresAPIKey: true,
-                apiUrl: "https://api.openai.com/v1/audio/transcriptions",
-                modelName: "whisper-1"
+                apiUrl: "api.openai.com/v1",
+                speechModelName: "whisper-1",
+                textModelName: "gpt-4o-mini"
             ),
             TranscriberConfig(
                 id: UUID(),
@@ -41,7 +44,8 @@ class SettingsViewModel: ObservableObject {
                 isSelected: false,
                 requiresAPIKey: true,
                 apiUrl: "wss://api.deepgram.com/v1/listen",
-                modelName: "nova-2-general"
+                speechModelName: "nova-2-general",
+                textModelName: nil
             ),
             TranscriberConfig(
                 id: UUID(),
@@ -49,7 +53,8 @@ class SettingsViewModel: ObservableObject {
                 isSelected: false,
                 requiresAPIKey: true,
                 apiUrl: "api.assemblyai.com/v2/realtime",
-                modelName: "nova-2-general"
+                speechModelName: nil,
+                textModelName: nil
             ),
         ]
 
@@ -57,7 +62,8 @@ class SettingsViewModel: ObservableObject {
         if let savedTranscribers = loadTranscribers() {
             for (i, e) in transcribers.enumerated() {
                 if let savedTranscriber = savedTranscribers.first(where: { $0.name == e.name }) {
-                    transcribers[i] = savedTranscriber
+                    transcribers[i].apiKey = savedTranscriber.apiKey
+                    transcribers[i].isSelected = savedTranscriber.isSelected
                 }
             }
         }

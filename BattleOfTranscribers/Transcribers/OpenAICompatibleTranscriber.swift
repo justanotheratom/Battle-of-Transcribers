@@ -47,7 +47,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
     }
 
     private func transcribeAudio() {
-        var request = URLRequest(url: URL(string: config.apiUrl!)!)
+        var request = URLRequest(url: URL(string: "https://\(config.apiUrl!)/audio/transcriptions")!)
         request.httpMethod = "POST"
         request.addValue("Bearer \(config.apiKey!)", forHTTPHeaderField: "Authorization")
         
@@ -64,7 +64,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         
         body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(config.modelName!)\r\n".data(using: .utf8)!)
+        body.append("\(config.speechModelName!)\r\n".data(using: .utf8)!)
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n".data(using: .utf8)!)
         body.append("en\r\n".data(using: .utf8)!)
@@ -124,11 +124,38 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                 newTranscript = sanitizeTranscript(transcription.trimmingCharacters(in: .whitespaces))
                 let prefix = self.prefix
                 DispatchQueue.main.async {
-                    self.state.transcription =
+                    let newTranscription =
                         self.appendTranscript(
                             prefix: prefix,
                             suffix: newTranscript!
                         )
+                    if !self.state.transcription.isEmpty
+                        &&
+                        !self.state.transcription.hasSuffix("\n")
+                        &&
+                        self.state.transcription == newTranscription {
+                        Task {
+                            let lastLine = self.extractLastLine(newTranscription)
+                            if try! await isCompleteSentence(
+                                lastLine,
+                                apiUrl: self.config.apiUrl!,
+                                apiKey: self.config.apiKey!,
+                                modelName: self.config.textModelName!) {
+                                if self.state.transcription == newTranscription {
+                                    self.transcriptionQueue.async {
+                                        self.audioBuffers = []
+                                        self.fragments = []
+                                        self.prefix = newTranscription + "\n----\n"
+                                        DispatchQueue.main.async {
+                                            self.state.transcription = self.prefix
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        self.state.transcription = newTranscription
+                    }
                     self.state.requestCount = self._requestCount
                     self.state.totalLatency += duration
                     self.state.totalSecondsTranscribed += secondsToTranscribe
@@ -203,8 +230,17 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         if prefix.isEmpty {
             return suffix
         }
+        
+        if prefix.hasSuffix("\n") {
+            return prefix + suffix
+        }
 
         return prefix + " " + suffix
+    }
+    
+    func extractLastLine(_ input: String) -> String {
+        let components = input.components(separatedBy: "\n")
+        return components.last ?? input
     }
 
     private func createWavData(from buffers: [AVAudioPCMBuffer]) -> Data {

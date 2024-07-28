@@ -17,7 +17,8 @@ struct TranscriberConfig: Identifiable, Codable, Equatable {
     var isSelected: Bool
     let requiresAPIKey: Bool
     let apiUrl: String?
-    let modelName: String?
+    let speechModelName: String?
+    let textModelName: String?
     
     var apiKey: String? {
         get { KeychainSwift().get(name.rawValue) }
@@ -35,7 +36,7 @@ struct TranscriberConfig: Identifiable, Codable, Equatable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, name, isSelected, requiresAPIKey, apiUrl, modelName
+        case id, name, isSelected, requiresAPIKey, apiUrl, speechModelName, textModelName
     }
 }
 
