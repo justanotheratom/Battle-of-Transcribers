@@ -14,7 +14,7 @@ class AudioTranscriptionViewModel: ObservableObject {
                                              interleaved: false)!
 
     private let bufferSizeInMilliseconds = 100
-    private let batchSize = 10
+    private let batchSize = 15
     private var batchedBuffers: [AVAudioPCMBuffer] = []
     private let batchQueue = DispatchQueue(label: "com.transcriber.batchQueue")
 
