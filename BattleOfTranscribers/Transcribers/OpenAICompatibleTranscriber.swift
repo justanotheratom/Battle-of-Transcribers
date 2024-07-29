@@ -129,26 +129,26 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                             prefix: prefix,
                             suffix: newTranscript!
                         )
+                    print("newTranscription: \(newTranscription)")
                     if !self.state.transcription.isEmpty
-                        &&
-                        !self.state.transcription.hasSuffix("\n")
                         &&
                         self.state.transcription == newTranscription {
                         Task {
-                            let lastLine = self.extractLastLine(newTranscription)
-                            if try! await isCompleteSentence(
-                                lastLine,
+                            let aiResponse = try! await calendarAgent(
+                                self.state.history,
+                                newTranscription,
                                 apiUrl: self.config.apiUrl!,
                                 apiKey: self.config.apiKey!,
-                                modelName: self.config.textModelName!) {
-                                if self.state.transcription == newTranscription {
-                                    self.transcriptionQueue.async {
-                                        self.audioBuffers = []
-                                        self.fragments = []
-                                        self.prefix = newTranscription + "\n----\n"
-                                        DispatchQueue.main.async {
-                                            self.state.transcription = self.prefix
-                                        }
+                                modelName: self.config.textModelName!)
+                            if self.state.transcription == newTranscription {
+                                self.transcriptionQueue.async {
+                                    self.audioBuffers = []
+                                    self.fragments = []
+                                    self.prefix = ""
+                                    DispatchQueue.main.async {
+                                        self.state.transcription = ""
+                                        self.state.history.append(newTranscription)
+                                        self.state.history.append(aiResponse)
                                     }
                                 }
                             }
@@ -181,10 +181,6 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         if fragments.count == maxTranscriptionWindow {
             let firstIsPrefixOfAll = fragments.dropFirst().allSatisfy { $0.fragment.hasPrefix(fragments[0].fragment) }
             if firstIsPrefixOfAll {
-//                print("--------------------")
-//                fragments.indices.forEach {
-//                    print("\($0): \(fragments[$0].fragment)")
-//                }
                 let firstFragment = fragments[0]
                 fragments.removeFirst()
                 fragments.indices.forEach {
@@ -192,9 +188,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                     fragments[$0].fragment.removeFirst(firstFragment.fragment.count)
                 }
                 audioBuffers.removeFirst(firstFragment.bufferCount)
-//                print("Prefix Befor: \(prefix)")
                 prefix = appendTranscript(prefix: prefix, suffix: firstFragment.fragment)
-//                print("Prefix After: \(prefix)")
             } else {
                 fragments.removeFirst()
             }
@@ -205,6 +199,7 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         
         let fillerPhrases = Set([
             "Thank you.",
+            "Thank you. Thank you.",
             "You",
             "you",
             "Thanks for watching!",
@@ -236,11 +231,6 @@ class OpenAICompatibleTranscriber: TranscriberBase {
         }
 
         return prefix + " " + suffix
-    }
-    
-    func extractLastLine(_ input: String) -> String {
-        let components = input.components(separatedBy: "\n")
-        return components.last ?? input
     }
 
     private func createWavData(from buffers: [AVAudioPCMBuffer]) -> Data {

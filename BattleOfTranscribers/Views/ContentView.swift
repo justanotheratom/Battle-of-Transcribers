@@ -154,7 +154,7 @@ struct ContentView: View {
     }
     
     private var shouldEnableEraseButton: Bool {
-        !audioViewModel.isRecording && audioViewModel.transcribers.contains { !$0.transcription.isEmpty }
+        !audioViewModel.isRecording && audioViewModel.transcribers.contains { !$0.conversation.isEmpty }
     }
 }
 
@@ -176,16 +176,16 @@ struct TranscriberView: View {
         VStack(alignment: .leading) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    Text(viewModel.transcription)
+                    Text(viewModel.conversation)
                         .textSelection(.enabled)
                         .font(.callout)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.5), value: viewModel.transcription)
+                        .animation(.easeInOut(duration: 0.5), value: viewModel.conversation)
                         .id("transcriptionText")
                 }
-                .onChange(of: viewModel.transcription) { _, _ in
+                .onChange(of: viewModel.conversation) { _, _ in
                     withAnimation {
                         proxy.scrollTo("transcriptionText", anchor: .bottom)
                     }

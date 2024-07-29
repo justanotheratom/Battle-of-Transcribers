@@ -42,7 +42,7 @@ struct TranscriberConfig: Identifiable, Codable, Equatable {
 
 protocol Transcriber {
     var name: String { get }
-    var transcription: String { get }
+    var conversation: String { get }
     var requestCount: Int { get }
     var averageLatency: Double { get }
     func startRecording()
@@ -51,9 +51,18 @@ protocol Transcriber {
 
 struct TranscriberState {
     var transcription: String = ""
+    var history: [String] = []
     var requestCount: Int = 0
     var totalLatency: Double = 0.0
     var totalSecondsTranscribed: Int = 0
+    
+    var conversation: String {
+        (history.isEmpty ?
+            ""
+            :
+            history.joined(separator: "\n----\n") + "\n----\n")
+        + transcription
+    }
 }
 
 class TranscriberBase: Transcriber, ObservableObject {
@@ -69,8 +78,8 @@ class TranscriberBase: Transcriber, ObservableObject {
         config.name.rawValue
     }
 
-    var transcription: String {
-        return state.transcription
+    var conversation: String {
+        return state.conversation
     }
     
     var requestCount: Int {

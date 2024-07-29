@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		393E27432C54000400968404 /* AssemblyAITranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 393E27422C53FFFE00968404 /* AssemblyAITranscriber.swift */; };
-		393E27452C54B0B200968404 /* SentenceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 393E27442C54B0AB00968404 /* SentenceDetector.swift */; };
+		393E27452C54B0B200968404 /* LLM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 393E27442C54B0AB00968404 /* LLM.swift */; };
 		399728FF2C2A431600860EAA /* BattleOfTranscribers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */; };
 		399729032C2A431800860EAA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 399729022C2A431800860EAA /* Assets.xcassets */; };
 		3997290F2C2B132B00860EAA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3997290E2C2B132B00860EAA /* ContentView.swift */; };
@@ -29,7 +29,7 @@
 /* Begin PBXFileReference section */
 		39168A412C481A0900B1662C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		393E27422C53FFFE00968404 /* AssemblyAITranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblyAITranscriber.swift; sourceTree = "<group>"; };
-		393E27442C54B0AB00968404 /* SentenceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceDetector.swift; sourceTree = "<group>"; };
+		393E27442C54B0AB00968404 /* LLM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLM.swift; sourceTree = "<group>"; };
 		399728FB2C2A431600860EAA /* BattleOfTranscribers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BattleOfTranscribers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		399728FE2C2A431600860EAA /* BattleOfTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleOfTranscribers.swift; sourceTree = "<group>"; };
 		399729022C2A431800860EAA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -104,7 +104,7 @@
 		3997292C2C33576C00860EAA /* Lib */ = {
 			isa = PBXGroup;
 			children = (
-				393E27442C54B0AB00968404 /* SentenceDetector.swift */,
+				393E27442C54B0AB00968404 /* LLM.swift */,
 				399729122C2F2A9900860EAA /* IncrementingCounter.swift */,
 				399729172C2F2CB500860EAA /* AVAudioPCMBuffer+Extensions.swift */,
 			);
@@ -212,7 +212,7 @@
 				3997290F2C2B132B00860EAA /* ContentView.swift in Sources */,
 				399729112C2B137E00860EAA /* AudioTranscriptionViewModel.swift in Sources */,
 				399729182C2F2CB500860EAA /* AVAudioPCMBuffer+Extensions.swift in Sources */,
-				393E27452C54B0B200968404 /* SentenceDetector.swift in Sources */,
+				393E27452C54B0B200968404 /* LLM.swift in Sources */,
 				399728FF2C2A431600860EAA /* BattleOfTranscribers.swift in Sources */,
 				3997292B2C3350FA00860EAA /* DeepgramTranscriber.swift in Sources */,
 				399729132C2F2A9900860EAA /* IncrementingCounter.swift in Sources */,
