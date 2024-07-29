@@ -11,7 +11,7 @@ struct GroqResponse: Decodable {
 }
 
 func calendarAgent(_ history: [String], _ sentence: String, apiUrl: String, apiKey: String, modelName: String) async throws -> String {
-    let startTime = DispatchTime.now()
+    let startTime = CFAbsoluteTimeGetCurrent()
     let url = URL(string: "https://\(apiUrl)/chat/completions")!
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -64,11 +64,11 @@ func calendarAgent(_ history: [String], _ sentence: String, apiUrl: String, apiK
         throw NSError(domain: "ResponseError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unable to parse response"])
     }
     
-    let endTime = DispatchTime.now()
-    let nanoTime = endTime.uptimeNanoseconds - startTime.uptimeNanoseconds
-    let timeInterval = Double(nanoTime) / 1_000_000 // Convert to milliseconds
+    let endTime = CFAbsoluteTimeGetCurrent()
+    let duration = endTime - startTime
+    let formattedDuration = String(format: "%.2f", duration * 1000)
 
-    print("calendarAgent(\(timeInterval) milliseconds) : \(sentence)")
+    print("calendarAgent(\(formattedDuration)) : \(sentence)")
 
     return content
 }

@@ -130,7 +130,6 @@ class OpenAICompatibleTranscriber: TranscriberBase {
                             prefix: prefix,
                             suffix: newTranscript!
                         )
-                    print("newTranscription: \(newTranscription)")
                     if !self.state.transcription.isEmpty
                         &&
                         self.state.transcription == newTranscription {
