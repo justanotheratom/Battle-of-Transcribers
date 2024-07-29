@@ -120,7 +120,8 @@ class OpenAICompatibleTranscriber: TranscriberBase {
             if let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []),
                let jsonDict = jsonResponse as? [String: Any],
                let transcription = jsonDict["text"] as? String {
-//                print("Transcript: \(transcription)")
+                let formattedDuration = String(format: "%.2f", duration * 1000)
+                print("Transcript(\(formattedDuration)): |\(transcription)|")
                 newTranscript = sanitizeTranscript(transcription.trimmingCharacters(in: .whitespaces))
                 let prefix = self.prefix
                 DispatchQueue.main.async {
@@ -206,7 +207,9 @@ class OpenAICompatibleTranscriber: TranscriberBase {
             "Thank you for watching!",
             "Thank you for watching.",
             ".",
-            ". ."
+            ". .",
+            "Subs by www.zeoranger.co.uk",
+            "Please see review 107.6173 on PissedConsumer.com"
         ])
 
         if fillerPhrases.contains(transcript) {

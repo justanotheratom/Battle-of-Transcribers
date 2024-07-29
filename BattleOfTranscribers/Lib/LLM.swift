@@ -68,7 +68,7 @@ func calendarAgent(_ history: [String], _ sentence: String, apiUrl: String, apiK
     let nanoTime = endTime.uptimeNanoseconds - startTime.uptimeNanoseconds
     let timeInterval = Double(nanoTime) / 1_000_000 // Convert to milliseconds
 
-    print("isCompleteSentence(\(timeInterval) milliseconds) : \(sentence)")
+    print("calendarAgent(\(timeInterval) milliseconds) : \(sentence)")
 
     return content
 }
